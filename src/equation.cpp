@@ -11,6 +11,8 @@ namespace SimSolve
 {
 
 int Equation::equation_count = 0;
+std::set<std::string> Equation::functions {"cos", "sin", "tan", "acos", "asin", "atan", "atan2", "cosh", "sinh", "tanh", "acosh", "asinh", "atanh", "exp", "log", "log10", "exp2", "expm1", "log1p", "log2", "logb", "pow", "sqrt", "cbrt", "hypot", "erf", "erfc"};
+
 
 Equation::Equation(const std::string &equation):
   _index(Equation::equation_count++),
@@ -29,18 +31,24 @@ void Equation::_parse_equation()
     _error_expr = stream.str();
     
     std::smatch sm;
-    std::regex e("[a-zA-Z]([a-zA-Z0-9]*)");
+    std::regex e("[a-zA-Z][a-zA-Z0-9]*");
     std::string s = _error_expr;
     while(std::regex_search(s, sm, e))
     {
       for(auto x:sm)
-      if(x.str().size())
       {
-        parameter_factory.get_parameter(x.str()).index();
-        //std::cout << "Found variable: " << x << " idx: " << idx << std::endl;
-        _parameters.insert(x.str());
+        //std::cout<<"'"<<x<<"' '"<<sm.suffix().str()<<"'"<<std::endl;
+        if(x.str().size())
+        {
+            if(Equation::functions.find(x.str()) == Equation::functions.end())
+            {
+                parameter_factory.get_parameter(x.str()).index();
+                //std::cout << "Found variable: " << x << " idx: " << idx << std::endl;
+                _parameters.insert(x.str());
+            }
+        }
+        s = sm.suffix().str();
       }
-      s = sm.suffix().str();
     };
   }
   else
@@ -75,9 +83,7 @@ void EquationGroup::load_function(void *dl_handle)
 {
     std::stringstream ss;
     ss<<"equation_group_"<<_index;
-    
     _err_func = (ErrorFunction)dlsym(dl_handle, ss.str().c_str());
-    std::cout<<ss.str()<<": "<<_err_func<<std::endl;
 }
 
 double EquationGroup::evaluate(const DoubleVector &current_parameters)

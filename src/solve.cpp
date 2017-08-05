@@ -17,7 +17,7 @@ double func(const std::vector<double> &x, std::vector<double> &grad, void* _f_da
 
 void EquationGroup::solve()
 {
-    std::cout <<"Solving group"<<_index<<std::endl;
+    std::cout <<"Solving"<<std::endl;
     for(auto const &e:_equations)std::cout<<_equation_list[e].equation()<<std::endl;
     std::cout <<"---"<<std::endl;
     

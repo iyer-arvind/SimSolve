@@ -36,7 +36,6 @@ System::System(const std::string& fname)
     if(! l.length()) continue;
     if(l.find('=') != std::string::npos)
     {
-      std::cout << l <<std::endl;
       _equation_list.push_back(Equation(l));
     }
     if(l.find('~') != std::string::npos)
@@ -44,11 +43,9 @@ System::System(const std::string& fname)
       int pos = l.find('~');
       std::string p = l.substr(0, pos);
       trim(p);
-      std::cout<<p<<std::stof(l.substr(pos+1))<<std::endl;
       parameter_factory.set_value(p, std::stof(l.substr(pos+1)));
     }
   }
-  std::cout<<parameter_factory<<std::endl;
   _partition_equations();
   _dl_handle = _emit_code();
   
@@ -71,22 +68,19 @@ void System::_partition_equations()
   for(int i=0;i<_equation_list.size();i++)
     unsolved_eqns.push_back(i);
   
+  std::cout<<"Strategy: "<<std::endl;
   // While there are still parameters left to be solved for
   while(unset_parameters.size())
   {
     if(unsolved_eqns.size() != unset_parameters.size())
     {
+        std::cout<<parameter_factory<<std::endl;
         std::cout<<unset_parameters.size()<<" vs "<<unsolved_eqns.size()<<std::endl;
         throw std::logic_error("Number of parameters is not the same as number of equations");
     }
     
     // These are the number of unsolved parameters
     int N = unset_parameters.size();
-    
-    // List the parameters for which we are solving for
-    std::cout<<"To solve for: ";
-    for(auto const &i:unset_parameters) std::cout<<i<<" ";
-    std::cout<<std::endl;
     
     // n is the number of equations which can be solved simultaneously
     for(int n=1; n<N+1; n++)
@@ -103,20 +97,16 @@ void System::_partition_equations()
             // The group of parameters in those equations
             ParameterSet group_parameters;
             
-
-            std::cout<<" checking: [";
             for(int i=0; i<bitmask.size(); i++)
             {
                 if(bitmask[i] == 'a')
                 {
                     int e = unsolved_eqns[i];
                     group_eqns.push_back(e);
-                    std::cout << _equation_list[e].equation()<<" ";
                     ParameterSet ep = _equation_list[e].parameters();
                     group_parameters.insert(ep.begin(), ep.end());
                 }
             }
-            std::cout<<"]";
             
             // Remove the parameters, which we have already solved for
             for(auto const &i: set_parameters)group_parameters.erase(i);
@@ -125,8 +115,11 @@ void System::_partition_equations()
             // we can independently solve for this
             if(group_parameters.size() == n)
             {
-                std::cout<<" << solve for ";
+                std::cout<<"Solve: [";
+                for(auto const &e:group_eqns) std::cout<<_equation_list[e].equation()<<" ";
+                std::cout<<"] for ";
                 for(auto const &i:group_parameters) std::cout<<i<<" ";
+                std::cout<<std::endl;
                 
                 // Save the group of equations
                 _equation_groups.push_back(
@@ -155,7 +148,6 @@ void System::_partition_equations()
             {
                 throw std::logic_error("more equations than parameters");
             }
-            std::cout<<std::endl;
             
             // If we can indeed solve a subset of equations, break out
             if(unset_parameters.size()<N)break;
@@ -179,7 +171,6 @@ void* System::_emit_code() const
     char cpp_file[strlen(temp_file)+5];
     sprintf(cpp_file, "%s.cpp", temp_file);
     
-    std::cout<<"Writing "<<cpp_file<<std::endl; 
     std::ofstream fout(cpp_file);
     
     fout<<"#include <cmath>"<<std::endl<<"using namespace std;"<<std::endl;
@@ -200,7 +191,7 @@ void* System::_emit_code() const
     std::system(cmd.str().c_str());
     
     void* handle = dlopen(so_file, RTLD_LAZY);
-    std::cout<<"Returning for "<<so_file<<" :"<<handle<<" ::"<<(handle==NULL?dlerror():"")<<std::endl;
+    std::cout <<"-----"<<std::endl;
     return handle;
 }
 

@@ -27,6 +27,7 @@ class Equation
 {
 public:
   static int equation_count;
+  static std::set<std::string> functions;
   
 private:
   int _index;
@@ -34,8 +35,8 @@ private:
   std::string _error_expr;
 
   ParameterSet _parameters;
-  
   void _parse_equation();
+  
     
 public:
   Equation(const std::string &equation);
