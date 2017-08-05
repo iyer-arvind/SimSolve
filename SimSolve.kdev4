@@ -1,3 +1,4 @@
 [Project]
-Name=SimSolve
+CreatedFrom=CMakeLists.txt
 Manager=KDevCMakeManager
+Name=SimSolve
