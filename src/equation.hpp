@@ -59,7 +59,9 @@ private:
     ParameterSet _current_parameters;
     EquationIndexList _equations;
     
-    typedef void (*ErrorFunction)(const double * const, const double * const, double *);
+    typedef void (*ErrorFunction)(const ParameterType * const,
+                                  const ParameterType * const,
+                                  ParameterType *);
     ErrorFunction _err_func;
 public:
     EquationGroup(int index,
@@ -77,7 +79,7 @@ public:
     
     void emit_code(std::ostream &stream) const;
     void load_function(void *dl_handle);
-    double evaluate(const DoubleVector &current_parameters);
+    double evaluate(const std::vector<double> &current_parameters);
     void solve();
 };
 

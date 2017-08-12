@@ -7,8 +7,21 @@
 #include <vector>
 #include <ostream>
 
+#ifdef UNITS_SUPPORT
+#include "units.hpp"
+#endif
+
+
 namespace SimSolve
 {
+
+#ifdef UNITS_SUPPORT
+typedef Units::Quantity ParameterType;
+#else
+typedef double ParameterType;
+#endif
+
+    
 class ParameterFactory;
 
 class Parameter 
@@ -25,19 +38,18 @@ public:
   Parameter(int index, std::string symbol, ParameterFactory *factory);
   
   int index() const
-  {
-    return _index;
-  }
+  {return _index;}
   
   std::string symbol() const
-  {
-    return _symbol;
-  }
-  double value() const;
+  {return _symbol;}
+  
+  ParameterType& value() const;
 };
 
 typedef std::set<std::string> ParameterSet;
-typedef std::vector<double> DoubleVector;
+
+
+typedef std::vector<ParameterType> ParameterVector;
 
 class ParameterFactory
 {
@@ -46,7 +58,7 @@ public:
  
 private:
   KeyMapType _map;
-  DoubleVector _value;
+  ParameterVector _value;
   
 public:
   ParameterFactory()
@@ -56,13 +68,20 @@ public:
   
   Parameter& get_parameter(const std::string& parameter);
   
-  void set_value(int index, double value)
+  void set_value(int index, ParameterType value)
   {_value[index] = value;}
   
-  void set_value(const std::string& parameter, double value)
+  void set_value(const std::string& parameter, ParameterType value)
   {_value[get_parameter(parameter).index()] = value;}
   
-  double get_value(int index)
+#ifdef UNITS_SUPPORT
+  void set_unit(const std::string& parameter, const Units::Unit &u)
+  {
+      _value[get_parameter(parameter).index()].set_unit(u);
+  }
+#endif
+  
+  ParameterType& get_value(int index)
   {return _value[index];}
   
   ParameterSet parameters()const;
@@ -70,7 +89,7 @@ public:
   int count()const
   {return _map.size();}
   
-  DoubleVector &value_vector() {return _value;}
+    ParameterVector &value_vector() {return _value;}
   
   void write_to_stream(std::ostream& stream) const;
   

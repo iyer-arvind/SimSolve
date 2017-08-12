@@ -21,13 +21,17 @@ void EquationGroup::solve()
     for(auto const &e:_equations)std::cout<<_equation_list[e].equation()<<std::endl;
     std::cout <<"---"<<std::endl;
     
-    DoubleVector &set_parameters = parameter_factory.value_vector();
-    DoubleVector current_parameters(_current_parameters.size());
+    ParameterVector &set_parameters = parameter_factory.value_vector();
+    std::vector<double> current_parameters(_current_parameters.size());
     int cp=0;
     
     for(auto const &p: _current_parameters)
     {
+#ifdef UNITS_SUPPORT
+        double d = set_parameters[parameter_factory.get_parameter(p).index()].value();
+#else
         double d = set_parameters[parameter_factory.get_parameter(p).index()];
+#endif
         if(std::isnan(d))
             d = 0.1;
         current_parameters[cp++] = d;
@@ -44,13 +48,19 @@ void EquationGroup::solve()
     
     nlopt::result result = opt.optimize(current_parameters, f);
     
-    std::cout <<"Converged to: [";
-    for(auto const &x: current_parameters)std::cout<<x<<' ';
-    std::cout<<"]\n--------------"<<std::endl;
+    std::cout <<"Converged to: "<<std::endl;
     
     cp = 0;
-    for(auto const &p: _current_parameters)set_parameters[parameter_factory.get_parameter(p).index()] = current_parameters[cp++];
-    
+    for(auto const &p: _current_parameters)
+    {
+#ifdef UNITS_SUPPORT
+        set_parameters[parameter_factory.get_parameter(p).index()].set_value(current_parameters[cp++]);
+#else
+        set_parameters[parameter_factory.get_parameter(p).index()] = current_parameters[cp++];
+#endif
+        std::cout<<" "<<p<<" ="<<set_parameters[parameter_factory.get_parameter(p).index()]<<std::endl;
+    }
+    std::cout<<"--------------"<<std::endl;
 }   
 
 }

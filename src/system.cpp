@@ -32,18 +32,38 @@ System::System(const std::string& fname)
   {
     ifh.getline(line, 1000);
     std::string l = line;
+    int cpos = l.find('#');
+    if(cpos != std::string::npos)
+        l = l.substr(0, cpos);
+    
     trim(l);
     if(! l.length()) continue;
-    if(l.find('=') != std::string::npos)
+
+        if(l.find('=') != std::string::npos)
     {
       _equation_list.push_back(Equation(l));
     }
     if(l.find('~') != std::string::npos)
     {
+#ifdef UNITS_SUPPORT
+       int dposo = l.find('[');
+       if(dposo != std::string::npos)
+       {
+           int dposc = l.find(']');
+           assert(dposc != std::string::npos);
+           int pos = l.find('~');
+           std::string p = l.substr(0, pos);
+           trim(p);
+           Units::Quantity q(std::stof(l.substr(pos+1, dposo)),
+                                       Units::Unit(l.substr(dposo+1,dposc)));
+           parameter_factory.set_value(p, q);
+       }
+#else
       int pos = l.find('~');
       std::string p = l.substr(0, pos);
       trim(p);
       parameter_factory.set_value(p, std::stof(l.substr(pos+1)));
+#endif
     }
   }
   _partition_equations();
@@ -165,6 +185,7 @@ void System::_partition_equations()
 
 void* System::_emit_code() const
 {
+    std::cout <<"Emitting code ..."<<std::endl;
     char temp_file[] = "/tmp/simsolve-emitted-code-XXXXXX";
     mkstemp(temp_file);
     
@@ -174,6 +195,12 @@ void* System::_emit_code() const
     std::ofstream fout(cpp_file);
     
     fout<<"#include <cmath>"<<std::endl<<"using namespace std;"<<std::endl;
+#ifdef UNITS_SUPPORT
+    //fout<<"#include \"units.hpp\""<<std::endl;
+    fout<<"typedef Units::Quantity ParameterType;"<<std::endl;
+#else
+    fout<<"typedef double ParameterType;"<<std::endl;
+#endif
     fout<<"\n\nextern \"C\" const char * name();\nconst char * name(){return \"SimSolve\";}\n";
     fout<<"// "<<_equation_groups.size()<<" equation groups to be solved"<<std::endl<<std::endl;
     for(auto const &g :_equation_groups)
@@ -181,17 +208,20 @@ void* System::_emit_code() const
         g.emit_code(fout);
     }
     fout.close();
+    
+    std::cout<<"Compiling code ..."<<std::endl;
     std::stringstream sof;
         
     char so_file[strlen(temp_file)+4];
     sprintf(so_file, "%s.so", temp_file);
     
     std::stringstream cmd;
-    cmd<<"g++ -fPIC -shared -rdynamic  "<<cpp_file<<" -o "<<so_file;
+    cmd<<"g++ -g -fPIC -shared -rdynamic -include /home/arvind/Roots/Codes/Codes/Units/src/units.hpp  "<<cpp_file<<" -o "<<so_file;
     std::system(cmd.str().c_str());
     
+    std::cout<<"Loading the library..."<<std::endl;
     void* handle = dlopen(so_file, RTLD_LAZY);
-    std::cout <<"-----"<<std::endl;
+    std::cout <<"Ready to solve."<<std::endl;
     return handle;
 }
 

@@ -22,12 +22,12 @@ Parameter& ParameterFactory::get_parameter(const std::string& parameter)
   if(i == _map.end())
   {
     _map[parameter] = Parameter(_map.size(), parameter, this);
-    _value.push_back(std::nan(""));
+    _value.push_back(ParameterType(std::nan("")));
   }
   return _map[parameter];
 }
 
-double Parameter::value() const
+ParameterType& Parameter::value() const
 {
   return _factory->get_value(_index);
 }
