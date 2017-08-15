@@ -196,9 +196,10 @@ void* System::_emit_code() const
     
     fout<<"#include <cmath>"<<std::endl<<"using namespace std;"<<std::endl;
 #ifdef UNITS_SUPPORT
-    //fout<<"#include \"units.hpp\""<<std::endl;
-    fout<<"typedef Units::Quantity ParameterType;"<<std::endl;
+    fout<<"#include \"units.hpp\""<<std::endl<<"#include \"units_math.hpp\""<<std::endl<<"using namespace Units;using namespace std;"<<std::endl;
+    fout<<"typedef Quantity ParameterType;"<<std::endl;
 #else
+    fout<<"#include <cmath>"<<std::endl<<"using namespace std;"<<std::endl;
     fout<<"typedef double ParameterType;"<<std::endl;
 #endif
     fout<<"\n\nextern \"C\" const char * name();\nconst char * name(){return \"SimSolve\";}\n";
@@ -216,7 +217,9 @@ void* System::_emit_code() const
     sprintf(so_file, "%s.so", temp_file);
     
     std::stringstream cmd;
-    cmd<<"g++ -g -fPIC -shared -rdynamic -include /home/arvind/Roots/Codes/Codes/Units/src/units.hpp  "<<cpp_file<<" -o "<<so_file;
+#define STRINGIFY(X) #X
+#define TOSTRING(X) STRINGIFY(X)
+    cmd<<"g++ -g -fPIC -shared -rdynamic -I"<<TOSTRING(UNITS_INCLUDE_DIR)<<" "<<cpp_file<<" -o "<<so_file;
     std::system(cmd.str().c_str());
     
     std::cout<<"Loading the library..."<<std::endl;
