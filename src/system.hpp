@@ -13,7 +13,7 @@ private:
   EquationList _equation_list;
   EquationGroupList _equation_groups;
   
-  void _partition_equations();
+  void _partition_equations(ParameterSet);
   void* _emit_code() const;
   void *_dl_handle;
   

@@ -1,0 +1,33 @@
+# Specifications
+on_power := 10 [kW]
+on_time := 3.3 [min]
+off_time := 30 [min]
+
+# A few constants
+emiss := 0.7
+sigma := 5.67e-8 [W/m^2/K^4]
+T := 303.15 [K]
+L := 222 [kJ/kg]
+
+# Now the equations
+
+# Total energy generated
+energy = on_power*on_time
+energy ~ 1000[kJ]
+
+# We must be able to store this much energy at the end of the on time
+(energy - radiation_power*on_time)  = heat_capacitor_mass * L
+
+# Guessing the heat capacitor mass
+heat_capacitor_mass ~ 10[kg]
+
+
+# Radiation power is got by the stephan-boltzmann equation
+radiation_power = emiss * area * sigma * pow(T, 4)
+
+# Total radiation emergy outwards must be the energy generated
+radiation_power*(on_time+off_time) = energy 
+
+# Guessing the area required and the radiation power
+area ~ 5 [m^2]
+radiation_power ~ 5[W] 

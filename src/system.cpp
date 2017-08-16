@@ -28,6 +28,8 @@ System::System(const std::string& fname)
   _equation_list.reserve(100);
   char line[1000];
   std::ifstream ifh(fname);
+  ParameterSet set_parameters;
+  
   while(! ifh.eof())
   {
     ifh.getline(line, 1000);
@@ -39,34 +41,49 @@ System::System(const std::string& fname)
     trim(l);
     if(! l.length()) continue;
 
-        if(l.find('=') != std::string::npos)
+    ssize_t ini_pos = l.find('~');
+    ssize_t equ_pos = l.find(":=");
+    if( ini_pos != std::string::npos || equ_pos != std::string::npos)
+    {
+        int pos = (equ_pos!= std::string::npos?equ_pos:ini_pos);
+        int off = (equ_pos!= std::string::npos?2:1);
+        std::string p;
+#ifdef UNITS_SUPPORT
+        int dposo = l.find('[');
+        if(dposo != std::string::npos)
+        {
+            int dposc = l.find(']');
+            assert(dposc != std::string::npos);
+           
+            p = l.substr(0, pos);
+            trim(p);
+            Units::Quantity q(std::stof(l.substr(pos+off, dposo)),
+                                        Units::Unit(l.substr(dposo+1,dposc)));
+            parameter_factory.set_value(p, q);
+        }
+        else
+        {
+            p = l.substr(0, pos);
+            trim(p);
+            parameter_factory.set_value(p, std::stof(l.substr(pos+off)));
+        }
+#else
+        p = l.substr(0, pos);
+        trim(p);
+        parameter_factory.set_value(p, std::stof(l.substr(pos+off)));
+#endif
+        if(equ_pos!= std::string::npos)
+        {
+            std::cout<<"Fixing value of "<<p<<std::endl;
+            set_parameters.insert(p);
+        }
+    }
+    else if(l.find('=') != std::string::npos)
     {
       _equation_list.push_back(Equation(l));
     }
-    if(l.find('~') != std::string::npos)
-    {
-#ifdef UNITS_SUPPORT
-       int dposo = l.find('[');
-       if(dposo != std::string::npos)
-       {
-           int dposc = l.find(']');
-           assert(dposc != std::string::npos);
-           int pos = l.find('~');
-           std::string p = l.substr(0, pos);
-           trim(p);
-           Units::Quantity q(std::stof(l.substr(pos+1, dposo)),
-                                       Units::Unit(l.substr(dposo+1,dposc)));
-           parameter_factory.set_value(p, q);
-       }
-#else
-      int pos = l.find('~');
-      std::string p = l.substr(0, pos);
-      trim(p);
-      parameter_factory.set_value(p, std::stof(l.substr(pos+1)));
-#endif
-    }
   }
-  _partition_equations();
+  _partition_equations(set_parameters);
   _dl_handle = _emit_code();
   
   for(auto &eg:_equation_groups)
@@ -75,12 +92,19 @@ System::System(const std::string& fname)
   }
 }
 
-void System::_partition_equations()
+void System::_partition_equations(ParameterSet set_parameters)
 {
   
   ParameterSet all_parameters = parameter_factory.parameters();
-  ParameterSet unset_parameters = all_parameters;
-  ParameterSet set_parameters;
+  ParameterSet unset_parameters;
+  for(auto const &a:all_parameters)
+  {
+      if(set_parameters.find(a) == set_parameters.end())
+      {
+          std::cout<<"To solve for "<<a<<std::endl;
+          unset_parameters.insert(a);
+      }
+  }
   
   std::vector<int> unsolved_eqns;
   unsolved_eqns.reserve(all_parameters.size());

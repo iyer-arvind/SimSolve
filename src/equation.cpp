@@ -50,14 +50,14 @@ void Equation::_parse_equation()
     }
 #endif
     std::smatch sm;
-    std::regex e("[a-zA-Z][a-zA-Z0-9]*");
+    std::regex e("[a-zA-Z_][a-zA-Z0-9_]*");
     
     while(std::regex_search(s, sm, e))
     {
         for(auto x:sm)
         {
             //std::cout<<"'"<<x<<"' '"<<sm.suffix().str()<<"'"<<std::endl;
-            if(x.str().size())
+            if(x.str().size() and x.str() != "e")
             {
             if(Equation::functions.find(x.str()) == Equation::functions.end())
             {
@@ -100,9 +100,13 @@ void EquationGroup::emit_code(std::ostream &stream) const
     for(auto const &x:_set_parameters) stream<<"  const ParameterType &"<<x<<" = _set_parameters["<<parameter_factory.get_parameter(x).index()<<"];"<<std::endl;
     cp = 0;
     for(auto const &x:_current_parameters) stream<<"  const ParameterType &"<<x<<" = _current_parameters["<<cp++<<"];"<<std::endl;
+    // cp = 0;
+    // for(auto const &x:_current_parameters) stream<<"  cout<<_current_parameters["<<cp++<<"]<<std::endl;"<<std::endl;
     
     int ei = 0;
     for(auto const &e:_equations)stream<<"  _errors["<<ei++<<"] ="<<_equation_list[e].error_expr()<<";"<<std::endl;
+    // ei = 0;
+    // for(auto const &e:_equations)stream<<"  cout<< _errors["<<ei++<<"]<<std::endl;"<<std::endl;
     stream<<"}\n";
     stream<<"\n\n\n";
 }
