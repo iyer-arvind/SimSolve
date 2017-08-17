@@ -51,7 +51,7 @@ System::System(const std::string& fname)
 
     if(ssize_t pos = l.find("::") != std::string::npos)
     {
-        _load_library(l);
+            _load_external_library(l);
     }
     
     ssize_t ini_pos = l.find('~');
@@ -105,7 +105,7 @@ System::System(const std::string& fname)
   }
 }
 
-void System::_load_library(std::string lib)
+void System::_load_external_library(std::string lib)
 {
     ssize_t pos = lib.find("::");
     std::string libname = lib.substr(0, pos);
@@ -246,10 +246,6 @@ void System::_partition_equations(ParameterSet set_parameters)
             
             // If we can indeed solve a subset of equations, break out
             if(unset_parameters.size()<N)break;
-            class EquationList: public std::vector<Equation>
-{
-  
-};
         } while(std::next_permutation(bitmask.begin(), bitmask.end()));
         
         // If we can indeed solve a subset of equations, break out
@@ -326,6 +322,9 @@ void System::solve()
 
 System::~System()
 {
+    for(auto &x:_external_libs)
+        dlclose(x.second);
+    
     if(_dl_handle)
         dlclose(_dl_handle);
 }

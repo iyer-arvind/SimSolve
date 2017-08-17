@@ -1,4 +1,4 @@
-libtestlib.so :: test_function 
+../build/external_libraries/libtestlib.so :: test_function
 
 x*x+test_function(y)=r*r
 x:=4

@@ -14,7 +14,7 @@ private:
   EquationList _equation_list;
   EquationGroupList _equation_groups;
   
-  void _load_library(std::string);
+  void _load_external_library(std::string);
   void _partition_equations(ParameterSet);
   void* _emit_code() const;
   void *_dl_handle;
