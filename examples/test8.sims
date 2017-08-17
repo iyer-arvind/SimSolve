@@ -32,3 +32,8 @@ radiation_power * (on_time+off_time) = energy
 area ~ 5 [m^2]
 radiation_power ~ 5[W]
 
+# Just print the per-area wattage of radiator
+radiation_power_per_sqm = radiation_power/area
+
+radiation_power_per_sqm ~ 300[W/m^2] 
+

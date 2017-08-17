@@ -7,7 +7,7 @@
 #include <sstream>
 #include <cstdlib>
 #include <algorithm>
-
+#include <regex>
 #include <assert.h>
 #include <dlfcn.h>
 
@@ -49,6 +49,11 @@ System::System(const std::string& fname)
     trim(l);
     if(! l.length()) continue;
 
+    if(ssize_t pos = l.find("::") != std::string::npos)
+    {
+        _load_library(l);
+    }
+    
     ssize_t ini_pos = l.find('~');
     ssize_t equ_pos = l.find(":=");
     if( ini_pos != std::string::npos || equ_pos != std::string::npos)
@@ -98,6 +103,44 @@ System::System(const std::string& fname)
   {
         eg.load_function(_dl_handle);
   }
+}
+
+void System::_load_library(std::string lib)
+{
+    ssize_t pos = lib.find("::");
+    std::string libname = lib.substr(0, pos);
+    trim(libname);
+    std::cout<<"loading '"<<libname<<"'"<<std::endl;
+    void *handle = dlopen(libname.c_str(), RTLD_LAZY);
+    
+    
+    if(!handle)
+        throw std::invalid_argument(std::string("Library '") + libname + "' not found.");
+    
+    const char *h = (char*)dlsym(handle, "header");
+    unsigned int *hl = (unsigned int*)dlsym(handle, "header_len");
+    
+    if(!h or !hl)
+        throw std::invalid_argument(std::string("Library does not seem to contain the header."));
+    
+    std::string s = lib.substr(pos+2);
+    
+    std::smatch sm;
+    std::regex e("[a-zA-Z_][a-zA-Z0-9_]*");
+    
+    while(std::regex_search(s, sm, e))
+    {
+        for(auto x:sm)
+        {
+            std::string function = x.str();
+            trim(function);
+            std::cout<<"adding function: '"<<function<<"'"<<std::endl;
+            Equation::functions.insert(function);
+        }
+        s = sm.suffix().str();
+    }
+    _external_libs[libname] = handle;
+    
 }
 
 void System::_partition_equations(ParameterSet set_parameters)
@@ -235,7 +278,17 @@ void* System::_emit_code() const
     
 #else
     fout<<"typedef double ParameterType;"<<std::endl;
-#endif    
+#endif
+    std::string link_flags;
+    for(auto const &e:_external_libs)
+    {
+        const char *h = (const char*)dlsym(e.second, "header");
+        unsigned int *hl = (unsigned int*)dlsym(e.second, "header_len");
+        std::string header(h, *hl);
+        fout <<"// FROM "<<e.first<<std::endl<<header<<std::endl;
+        link_flags += std::string(" -l:") + e.first + " "; 
+    }
+    
     fout<<"\n\nextern \"C\" const char * name();\nconst char * name(){return \"SimSolve\";}\n";
     fout<<"// "<<_equation_groups.size()<<" equation groups to be solved"<<std::endl<<std::endl;
     for(auto const &g :_equation_groups)
@@ -251,8 +304,11 @@ void* System::_emit_code() const
     sprintf(so_file, "%s.so", temp_file);
     
     std::stringstream cmd;
-    cmd<<"g++ -g -fPIC -shared -rdynamic "<<cpp_file<<" -o "<<so_file;
-    std::system(cmd.str().c_str());
+    cmd<<"g++ -g -fPIC -shared -rdynamic -L . "<<link_flags<<cpp_file<<" -o "<<so_file;
+    std::cout<<"Executing "<<cmd.str()<<std::endl;
+    int ret_code = std::system(cmd.str().c_str());
+    if(ret_code)
+        throw std::logic_error("compilation of module failed.");
     
     std::cout<<"Loading the library..."<<std::endl;
     void* handle = dlopen(so_file, RTLD_LAZY);

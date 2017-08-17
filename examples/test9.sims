@@ -1,0 +1,6 @@
+libtestlib.so :: test_function 
+
+x*x+test_function(y)=r*r
+x:=4
+r:=5
+y~2
