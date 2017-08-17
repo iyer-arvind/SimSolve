@@ -11,6 +11,11 @@
 #include <assert.h>
 #include <dlfcn.h>
 
+#ifdef UNITS_SUPPORT
+extern unsigned char units_header[];
+extern unsigned int units_header_len;
+#endif
+
 void trim(std::string& str) 
 {
   size_t endpos = str.find_last_not_of(" \t\r\n");
@@ -30,6 +35,9 @@ System::System(const std::string& fname)
   std::ifstream ifh(fname);
   ParameterSet set_parameters;
   
+  if(!ifh.is_open())
+        throw std::invalid_argument("File missing?");
+    
   while(! ifh.eof())
   {
     ifh.getline(line, 1000);
@@ -220,12 +228,14 @@ void* System::_emit_code() const
     
     fout<<"#include <cmath>"<<std::endl<<"using namespace std;"<<std::endl;
 #ifdef UNITS_SUPPORT
-    fout<<"#include \"units.hpp\""<<std::endl<<"#include \"units_math.hpp\""<<std::endl<<"using namespace Units;using namespace std;"<<std::endl;
+    std::string units_header_str((const char*)units_header, units_header_len);
+    fout<<"// -----------------UNITS_HEADER"<<std::endl<<units_header_str<<std::endl<<"// -----------------UNITS_HEADER"<<std::endl;
+    fout<<"using namespace Units;"<<std::endl;
     fout<<"typedef Quantity ParameterType;"<<std::endl;
+    
 #else
-    fout<<"#include <cmath>"<<std::endl<<"using namespace std;"<<std::endl;
     fout<<"typedef double ParameterType;"<<std::endl;
-#endif
+#endif    
     fout<<"\n\nextern \"C\" const char * name();\nconst char * name(){return \"SimSolve\";}\n";
     fout<<"// "<<_equation_groups.size()<<" equation groups to be solved"<<std::endl<<std::endl;
     for(auto const &g :_equation_groups)
@@ -241,9 +251,7 @@ void* System::_emit_code() const
     sprintf(so_file, "%s.so", temp_file);
     
     std::stringstream cmd;
-#define STRINGIFY(X) #X
-#define TOSTRING(X) STRINGIFY(X)
-    cmd<<"g++ -g -fPIC -shared -rdynamic -I"<<TOSTRING(UNITS_INCLUDE_DIR)<<" "<<cpp_file<<" -o "<<so_file;
+    cmd<<"g++ -g -fPIC -shared -rdynamic "<<cpp_file<<" -o "<<so_file;
     std::system(cmd.str().c_str());
     
     std::cout<<"Loading the library..."<<std::endl;
