@@ -87,7 +87,7 @@ System::System(const std::string& fname)
 #endif
         if(equ_pos!= std::string::npos)
         {
-            std::cout<<"Fixing value of "<<p<<std::endl;
+            o3<<"Fixing value of "<<p<<"\n";
             set_parameters.insert(p);
         }
     }
@@ -110,7 +110,7 @@ void System::_load_external_library(std::string lib)
     ssize_t pos = lib.find("::");
     std::string libname = lib.substr(0, pos);
     trim(libname);
-    std::cout<<"loading '"<<libname<<"'"<<std::endl;
+    o3<<"Loading '"<<libname<<"'\n";
     void *handle = dlopen(libname.c_str(), RTLD_LAZY);
     
     
@@ -134,7 +134,7 @@ void System::_load_external_library(std::string lib)
         {
             std::string function = x.str();
             trim(function);
-            std::cout<<"adding function: '"<<function<<"'"<<std::endl;
+            o3<<"Adding function: '"<<function<<"'"<<"\n";
             Equation::functions.insert(function);
         }
         s = sm.suffix().str();
@@ -152,7 +152,7 @@ void System::_partition_equations(ParameterSet set_parameters)
   {
       if(set_parameters.find(a) == set_parameters.end())
       {
-          std::cout<<"To solve for "<<a<<std::endl;
+          o2<<"To solve for "<<a<<"\n";
           unset_parameters.insert(a);
       }
   }
@@ -163,14 +163,14 @@ void System::_partition_equations(ParameterSet set_parameters)
   for(int i=0;i<_equation_list.size();i++)
     unsolved_eqns.push_back(i);
   
-  std::cout<<"Strategy: "<<std::endl;
+  o2<<"Strategy: \n";
   // While there are still parameters left to be solved for
   while(unset_parameters.size())
   {
     if(unsolved_eqns.size() != unset_parameters.size())
     {
-        std::cout<<parameter_factory<<std::endl;
-        std::cout<<unset_parameters.size()<<" vs "<<unsolved_eqns.size()<<std::endl;
+        std::cerr<<parameter_factory<<"\n";
+        std::cerr<<unset_parameters.size()<<" vs "<<unsolved_eqns.size()<<"\n";
         throw std::logic_error("Number of parameters is not the same as number of equations");
     }
     
@@ -210,11 +210,11 @@ void System::_partition_equations(ParameterSet set_parameters)
             // we can independently solve for this
             if(group_parameters.size() == n)
             {
-                std::cout<<"Solve: [";
-                for(auto const &e:group_eqns) std::cout<<_equation_list[e].equation()<<" ";
-                std::cout<<"] for ";
-                for(auto const &i:group_parameters) std::cout<<i<<" ";
-                std::cout<<std::endl;
+                o2<<"Solve: [";
+                for(auto const &e:group_eqns) o2<<_equation_list[e].equation()<<" ";
+                o2<<"] for ";
+                for(auto const &i:group_parameters) o2<<i<<" ";
+                o2<<"\n";
                 
                 // Save the group of equations
                 _equation_groups.push_back(
@@ -256,7 +256,7 @@ void System::_partition_equations(ParameterSet set_parameters)
 
 void* System::_emit_code() const
 {
-    std::cout <<"Emitting code ..."<<std::endl;
+    o3 <<"Emitting code ..."<<"\n";
     char temp_file[] = "/tmp/simsolve-emitted-code-XXXXXX";
     mkstemp(temp_file);
     
@@ -265,15 +265,15 @@ void* System::_emit_code() const
     
     std::ofstream fout(cpp_file);
     
-    fout<<"#include <cmath>"<<std::endl<<"using namespace std;"<<std::endl;
+    fout<<"#include <cmath>"<<"\n"<<"using namespace std;"<<"\n";
 #ifdef UNITS_SUPPORT
     std::string units_header_str((const char*)units_header, units_header_len);
-    fout<<"// -----------------UNITS_HEADER"<<std::endl<<units_header_str<<std::endl<<"// -----------------UNITS_HEADER"<<std::endl;
-    fout<<"using namespace Units;"<<std::endl;
-    fout<<"typedef Quantity ParameterType;"<<std::endl;
+    fout<<"// -----------------UNITS_HEADER"<<"\n"<<units_header_str<<"\n"<<"// -----------------UNITS_HEADER"<<"\n";
+    fout<<"using namespace Units;"<<"\n";
+    fout<<"typedef Quantity ParameterType;"<<"\n";
     
 #else
-    fout<<"typedef double ParameterType;"<<std::endl;
+    fout<<"typedef double ParameterType;"<<"\n";
 #endif
     std::string link_flags;
     for(auto const &e:_external_libs)
@@ -281,19 +281,19 @@ void* System::_emit_code() const
         const char *h = (const char*)dlsym(e.second, "header");
         unsigned int *hl = (unsigned int*)dlsym(e.second, "header_len");
         std::string header(h, *hl);
-        fout <<"// FROM "<<e.first<<std::endl<<header<<std::endl;
+        fout <<"// FROM "<<e.first<<"\n"<<header<<"\n";
         link_flags += std::string(" -l:") + e.first + " "; 
     }
     
     fout<<"\n\nextern \"C\" const char * name();\nconst char * name(){return \"SimSolve\";}\n";
-    fout<<"// "<<_equation_groups.size()<<" equation groups to be solved"<<std::endl<<std::endl;
+    fout<<"// "<<_equation_groups.size()<<" equation groups to be solved"<<"\n"<<"\n";
     for(auto const &g :_equation_groups)
     {
         g.emit_code(fout);
     }
     fout.close();
     
-    std::cout<<"Compiling code ..."<<std::endl;
+    o3<<"Compiling code ..."<<"\n";
     std::stringstream sof;
         
     char so_file[strlen(temp_file)+4];
@@ -301,14 +301,14 @@ void* System::_emit_code() const
     
     std::stringstream cmd;
     cmd<<"g++ -g -fPIC -shared -rdynamic -L . "<<link_flags<<cpp_file<<" -o "<<so_file;
-    std::cout<<"Executing "<<cmd.str()<<std::endl;
+    o4<<"Executing "<<cmd.str()<<"\n";
     int ret_code = std::system(cmd.str().c_str());
     if(ret_code)
         throw std::logic_error("compilation of module failed.");
     
-    std::cout<<"Loading the library..."<<std::endl;
+    o4<<"Loading the library..."<<"\n";
     void* handle = dlopen(so_file, RTLD_LAZY);
-    std::cout <<"Ready to solve."<<std::endl;
+    o4 <<"Ready to solve."<<"\n";
     return handle;
 }
 

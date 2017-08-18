@@ -17,9 +17,9 @@ double func(const std::vector<double> &x, std::vector<double> &grad, void* _f_da
 
 void EquationGroup::solve()
 {
-    std::cout <<"Solving"<<std::endl;
-    for(auto const &e:_equations)std::cout<<_equation_list[e].equation()<<std::endl;
-    std::cout <<"---"<<std::endl;
+    o1 <<"Solving\n";
+    for(auto const &e:_equations)o1<<"  "<<_equation_list[e].equation()<<"\n";
+    o1 <<"---\n";
     
     ParameterVector &set_parameters = parameter_factory.value_vector();
     std::vector<double> current_parameters(_current_parameters.size());
@@ -48,7 +48,7 @@ void EquationGroup::solve()
     
     nlopt::result result = opt.optimize(current_parameters, f);
     
-    std::cout <<"Converged to: "<<std::endl;
+    o1<<"Converged to: "<<"\n";
     
     cp = 0;
     for(auto const &p: _current_parameters)
@@ -58,9 +58,9 @@ void EquationGroup::solve()
 #else
         set_parameters[parameter_factory.get_parameter(p).index()] = current_parameters[cp++];
 #endif
-        std::cout<<" "<<p<<" ="<<set_parameters[parameter_factory.get_parameter(p).index()]<<std::endl;
+        o1<<" "<<p<<" ="<<set_parameters[parameter_factory.get_parameter(p).index()]<<"\n";
     }
-    std::cout<<"--------------"<<std::endl;
+    o1<<"--------------\n";
 }   
 
 }

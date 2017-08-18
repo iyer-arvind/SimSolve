@@ -1,6 +1,6 @@
 
 
-add_executable(simsolve parameter.cpp equation.cpp system.cpp solve.cpp main.cpp)
+add_executable(simsolve parameter.cpp equation.cpp system.cpp solve.cpp main.cpp utils.cpp)
 if(${Units_FOUND})
 message(info "Units found, enabling units support")
 target_compile_definitions(simsolve PRIVATE UNITS_SUPPORT)

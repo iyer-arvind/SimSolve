@@ -10,7 +10,6 @@
 
 namespace SimSolve
 {
-
   
 class InvalidEquation: public std::exception
 {

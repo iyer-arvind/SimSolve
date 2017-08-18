@@ -11,6 +11,7 @@
 #include "units.hpp"
 #endif
 
+#include "utils.hpp"
 
 namespace SimSolve
 {
