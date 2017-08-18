@@ -2,6 +2,7 @@
 
 #include <fstream>
 #include <iostream>
+#include <iomanip>
 #include <cstdio>
 #include <cstring>
 #include <sstream>
@@ -14,6 +15,10 @@
 #ifdef UNITS_SUPPORT
 extern unsigned char units_header[];
 extern unsigned int units_header_len;
+#endif
+
+#ifndef HASH_FUNC
+#define HASH_FUNC MurmurHash64A
 #endif
 
 void trim(std::string& str) 
@@ -256,15 +261,8 @@ void System::_partition_equations(ParameterSet set_parameters)
 
 void* System::_emit_code() const
 {
-    o3 <<"Emitting code ..."<<"\n";
-    char temp_file[] = "/tmp/simsolve-emitted-code-XXXXXX";
-    mkstemp(temp_file);
-    
-    char cpp_file[strlen(temp_file)+5];
-    sprintf(cpp_file, "%s.cpp", temp_file);
-    
-    std::ofstream fout(cpp_file);
-    
+    std::stringstream fout;
+    o3<<"Generating code ...\n";
     fout<<"#include <cmath>"<<"\n"<<"using namespace std;"<<"\n";
 #ifdef UNITS_SUPPORT
     std::string units_header_str((const char*)units_header, units_header_len);
@@ -291,23 +289,38 @@ void* System::_emit_code() const
     {
         g.emit_code(fout);
     }
-    fout.close();
     
-    o3<<"Compiling code ..."<<"\n";
-    std::stringstream sof;
+    std::string code = fout.str();
+    
+    uint64_t hash = HASH_FUNC(code.c_str(), code.size());
+    
+    std::stringstream fname;
+    fname<<"/tmp/simsolve-emitted-code-0x"<<std::setfill('0')<<std::setw(16)<<std::hex<<hash;
+    
+    std::ifstream check(fname.str()+".cpp");
+    bool exists = check.good();
+    check.close();
+    if(!exists)
+    {
+        o3 <<"Emitting code ..."<<"\n";
+        std::ofstream codeout(fname.str()+".cpp");
+        codeout<<code;
+        codeout.close();
         
-    char so_file[strlen(temp_file)+4];
-    sprintf(so_file, "%s.so", temp_file);
-    
-    std::stringstream cmd;
-    cmd<<"g++ -g -fPIC -shared -rdynamic -L . "<<link_flags<<cpp_file<<" -o "<<so_file;
-    o4<<"Executing "<<cmd.str()<<"\n";
-    int ret_code = std::system(cmd.str().c_str());
-    if(ret_code)
-        throw std::logic_error("compilation of module failed.");
+        o3<<"Compiling code ..."<<"\n";
+        std::stringstream sof;
+        
+        std::stringstream cmd;
+        cmd<<"g++ -g -fPIC -shared -rdynamic -L . "<<link_flags<<fname.str()<<".cpp -o "<<fname.str()<<".so";
+        o4<<"Executing "<<cmd.str()<<"\n";
+        int ret_code = std::system(cmd.str().c_str());
+        if(ret_code)
+            throw std::logic_error("compilation of module failed.");
+    }
     
     o4<<"Loading the library..."<<"\n";
-    void* handle = dlopen(so_file, RTLD_LAZY);
+    void* handle = dlopen((fname.str()+".so").c_str(), RTLD_LAZY);
+    
     o4 <<"Ready to solve."<<"\n";
     return handle;
 }

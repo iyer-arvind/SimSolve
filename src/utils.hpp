@@ -3,7 +3,7 @@
 
 #include <iostream>
 #include <ostream>
-
+#include <cstdint>
 namespace SimSolve
 {
 
@@ -25,4 +25,13 @@ Output& operator<<(Output& output, const T &t)
 
 extern Output o1, o2, o3, o4;
 }
+#endif
+
+
+#ifndef MURMURHASH2_64_H_INCLUDED
+#define MURMURHASH2_64_H_INCLUDED
+
+uint64_t MurmurHash64A ( const void * key, int len, unsigned int seed=1 );
+uint64_t MurmurHash64B ( const void * key, int len, unsigned int seed=1 );
+
 #endif
