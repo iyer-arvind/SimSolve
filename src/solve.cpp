@@ -37,7 +37,7 @@ void EquationGroup::solve()
         current_parameters[cp++] = d;
     }
     
-    nlopt::opt opt(nlopt::LN_BOBYQA, _current_parameters.size());
+    nlopt::opt opt(nlopt::LN_COBYLA, _current_parameters.size());
     
     opt.set_stopval(1e-14);
     opt.set_ftol_rel(1e-14);
@@ -60,6 +60,7 @@ void EquationGroup::solve()
 #endif
         o1<<" "<<p<<" ="<<set_parameters[parameter_factory.get_parameter(p).index()]<<"\n";
     }
+    o1<<"With error: "<<opt.last_optimum_value()<<"\n";
     o1<<"--------------\n";
 }   
 
