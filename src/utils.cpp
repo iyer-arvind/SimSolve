@@ -4,6 +4,17 @@ namespace SimSolve
 {
 Output o1(1), o2(2), o3(3), o4(4);
 int Output::ref_level=0;
+
+void trim(std::string& str) 
+{
+  size_t endpos = str.find_last_not_of(" \t\r\n");
+  if(std::string::npos != endpos )
+    str = str.substr(0, endpos+1);
+  
+  size_t startpos = str.find_first_not_of(" \t\r\n");
+  if(std::string::npos != startpos )
+    str = str.substr(startpos);
+}
 }
 //-----------------------------------------------------------------------------
 // MurmurHash2, 64-bit versions, by Austin Appleby

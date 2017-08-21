@@ -39,9 +39,9 @@ void EquationGroup::solve()
     
     nlopt::opt opt(nlopt::LN_BOBYQA, _current_parameters.size());
     
-    opt.set_stopval(1e-10);
-    opt.set_ftol_rel(1e-10);
-    opt.set_ftol_abs(1e-10);
+    opt.set_stopval(1e-14);
+    opt.set_ftol_rel(1e-14);
+    opt.set_ftol_abs(1e-14);
     opt.set_min_objective(&func, this);
     
     double f;

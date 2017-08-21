@@ -21,16 +21,7 @@ extern unsigned int units_header_len;
 #define HASH_FUNC MurmurHash64A
 #endif
 
-void trim(std::string& str) 
-{
-  size_t endpos = str.find_last_not_of(" \t\r\n");
-  if(std::string::npos != endpos )
-    str = str.substr(0, endpos+1);
-  
-  size_t startpos = str.find_first_not_of(" \t\r\n");
-  if(std::string::npos != startpos )
-    str = str.substr(startpos);
-}
+
 namespace SimSolve
 {
 System::System(const std::string& fname)
@@ -74,10 +65,25 @@ System::System(const std::string& fname)
             assert(dposc != std::string::npos);
            
             p = l.substr(0, pos);
+            std::string v_str = l.substr(pos+off, dposo);
+            std::string d_str = l.substr(dposo+1,dposc);
+            
+            double value = std::stof(v_str);
+            
             trim(p);
-            Units::Quantity q(std::stof(l.substr(pos+off, dposo)),
-                                        Units::Unit(l.substr(dposo+1,dposc)));
-            parameter_factory.set_value(p, q);
+            ssize_t convpos = d_str.find("->");
+            if(convpos == std::string::npos)
+            {
+                Units::Quantity q(value, Units::Unit(d_str));
+                parameter_factory.set_value(p, q);
+            }
+            else
+            {
+                std::string f_u_str = d_str.substr(0, convpos);
+                std::string t_u_str = d_str.substr(convpos+2);
+                Units::Quantity q = Units::Quantity(value, Units::Unit(f_u_str)).to(Units::Unit(t_u_str));
+                parameter_factory.set_value(p, q);
+            }
         }
         else
         {

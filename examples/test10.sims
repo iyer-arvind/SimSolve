@@ -1,0 +1,11 @@
+
+MolWt := 28.05 [kg/kmol]
+R_univ := 8314 [kJ/kmol/K]
+T := 30 [degC->K]
+p := 1 [bar]
+
+R = R_univ / MolWt
+p = rho * R * T
+
+R ~ 200 [kJ/kg/K]
+rho ~ 1 [kg/m^3]

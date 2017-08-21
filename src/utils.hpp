@@ -24,6 +24,9 @@ Output& operator<<(Output& output, const T &t)
 }
 
 extern Output o1, o2, o3, o4;
+
+void trim(std::string& str);
+
 }
 #endif
 

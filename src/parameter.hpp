@@ -72,12 +72,18 @@ public:
   void set_value(int index, ParameterType value)
   {_value[index] = value;}
   
-  void set_value(const std::string& parameter, ParameterType value)
-  {_value[get_parameter(parameter).index()] = value;}
+  void set_value(const std::string& pparameter, ParameterType value)
+  {
+      std::string parameter = pparameter;
+      trim(parameter);
+      _value[get_parameter(parameter).index()] = value;
+  }
   
 #ifdef UNITS_SUPPORT
-  void set_unit(const std::string& parameter, const Units::Unit &u)
+  void set_unit(const std::string& pparameter, const Units::Unit &u)
   {
+      std::string parameter = pparameter;
+      trim(parameter);
       _value[get_parameter(parameter).index()].set_unit(u);
   }
 #endif

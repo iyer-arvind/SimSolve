@@ -16,8 +16,11 @@ Parameter::Parameter(int index, std::string symbol, ParameterFactory* factory):
 
 }
 
-Parameter& ParameterFactory::get_parameter(const std::string& parameter)
+Parameter& ParameterFactory::get_parameter(const std::string& pparameter)
 {
+    std::string parameter = pparameter;
+    trim(parameter);
+    
     auto i = _map.find(parameter);
     if(i == _map.end())
     {
